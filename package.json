@@ -1,0 +1,65 @@
+{
+  "name": "paperclip-adapter-mistral-vibe",
+  "version": "0.1.0",
+  "description": "Mistral Vibe (vibe-acp) external adapter plugin for Paperclip",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/deltadrai/paperclip-adapter-mistral-vibe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deltadrai/paperclip-adapter-mistral-vibe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/deltadrai/paperclip-adapter-mistral-vibe/issues"
+  },
+  "keywords": [
+    "paperclip",
+    "paperclip-adapter",
+    "mistral",
+    "mistral-vibe",
+    "vibe",
+    "vibe-acp",
+    "ai-agent",
+    "acp"
+  ],
+  "paperclip": {
+    "adapterUiParser": "1.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ui-parser": {
+      "types": "./dist/ui-parser.d.ts",
+      "import": "./dist/ui-parser.js",
+      "default": "./dist/ui-parser.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@paperclipai/adapter-utils": "^2026.1023.0",
+    "@paperclipai/shared": "^2026.1023.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
