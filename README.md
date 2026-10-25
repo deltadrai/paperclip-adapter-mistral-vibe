@@ -9,20 +9,26 @@ External adapter plugin that runs [Mistral Vibe](https://github.com/mistralai/mi
 
 ## How it works
 
-```
-Paperclip UI ──"Add agent: Mistral Vibe, model X"──▶ paperclip-server
-                                                          │
-                          adapter plugin mistral_vibe (npm, installed into the Paperclip home)
-                                                          │  createAcpxEngineExecutor(...)
-                                                          │  agent=custom, agentCommand=<vibe-acp path>
-                                                          ▼
-                                           spawn vibe-acp   (stdio ACP)
-                                             env: VIBE_HOME=<per-agent dir under the Paperclip instance root>
-                                                  MISTRAL_API_KEY=<this agent's key, from its adapter env>
-                                                  PAPERCLIP_* (injected by Paperclip)
-                                                          │ HTTPS
-                                                          ▼
-                                              Mistral API, Vibe team plan
+```mermaid
+flowchart TD
+    UI["Paperclip UI<br/>Add agent: Mistral Vibe, model X"]
+    Server["paperclip-server"]
+    Plugin["adapter plugin mistral_vibe<br/>(npm, installed into the Paperclip home)"]
+    Spawn["spawn vibe-acp (stdio ACP)"]
+    Api["Mistral API<br/>Vibe team plan"]
+
+    UI -->|"Add agent"| Server
+    Server --> Plugin
+    Plugin -->|"createAcpxEngineExecutor(...)<br/>agent=custom, agentCommand=&lt;vibe-acp path&gt;"| Spawn
+    Spawn -->|"HTTPS"| Api
+
+    subgraph Env["vibe-acp process env"]
+        VibeHome["VIBE_HOME = per-agent dir under the Paperclip instance root"]
+        ApiKey["MISTRAL_API_KEY = this agent's key, from its adapter env"]
+        PaperclipEnv["PAPERCLIP_* (injected by Paperclip)"]
+    end
+
+    Spawn -.-> Env
 ```
 
 Isolation guarantees:
