@@ -125,6 +125,23 @@ npm run build     # tsc → dist/
 npm test          # node --test smoke tests against dist/
 ```
 
+## CI/CD
+
+- **CI** (`.github/workflows/ci.yml`) runs on every push/PR to `main`: typecheck, build, and the smoke tests on Node 22 and 24, plus checks that `dist/ui-parser.js` stays import-free and that the publish payload is correct.
+- **Release** (`.github/workflows/publish.yml`) runs when `main` is tagged `v*.*.*`. It verifies the tag matches `package.json`, runs the full build+test suite, publishes to npm with provenance, and creates a GitHub release with generated notes.
+
+To cut a release:
+
+```sh
+git checkout main && git pull
+npm version patch        # or minor / major — updates package.json + package-lock.json
+git push origin main --follow-tags
+git tag                  # created by npm version, e.g. v0.1.1
+git push origin v0.1.1   # triggers the publish workflow
+```
+
+npm authentication: the workflow uses npm **Trusted Publishing** (OIDC via `id-token: write`), so no long-lived `NPM_TOKEN` secret is required — configure the package at [npmjs.com](https://www.npmjs.com/package/paperclip-adapter-mistral-vibe) → *Publishing access* → *Trusted publisher* → GitHub → this repository, workflow `publish.yml`, tag pattern `v*.*.*`. If you prefer a classic token instead, add an `NPM_TOKEN` repository secret and keep the `NODE_AUTH_TOKEN` env line in the workflow.
+
 The `./ui-parser` export (`dist/ui-parser.js`) is self-contained (zero runtime imports) and served to the browser for run-transcript rendering. Its engine-line mapping is adapted from `parseAcpxStdoutLine` in `@paperclipai/adapter-utils` (Paperclip is MIT-licensed).
 
 ## License
