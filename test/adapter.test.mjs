@@ -358,3 +358,170 @@ test("node version gate matches the engine requirement", () => {
   assert.equal(testMod.nodeVersionMeetsAcpMinimum("v25.0.0"), true);
   assert.equal(testMod.nodeVersionMeetsAcpMinimum("v22.13.0"), false);
 });
+
+const quotaMod = await import("../dist/server/quota.js");
+
+function withMockFetch(handler, fn) {
+  const original = globalThis.fetch;
+  globalThis.fetch = handler;
+  return Promise.resolve()
+    .then(fn)
+    .finally(() => {
+      globalThis.fetch = original;
+    });
+}
+
+function jsonResponse(status, body) {
+  return {
+    status,
+    json: async () => body,
+  };
+}
+
+test("getQuotaWindows reports credentials_unavailable without an admin key", async () => {
+  const saved = process.env.MISTRAL_ADMIN_API_KEY;
+  delete process.env.MISTRAL_ADMIN_API_KEY;
+  try {
+    const result = await quotaMod.getQuotaWindows();
+    assert.equal(result.provider, "mistral");
+    assert.equal(result.ok, false);
+    assert.equal(result.errorFamily, "credentials_unavailable");
+    assert.deepEqual(result.windows, []);
+    assert.ok(result.error.includes("MISTRAL_ADMIN_API_KEY"));
+    assert.ok(!JSON.stringify(result).includes("sk-"), "must not leak key material");
+  } finally {
+    if (saved !== undefined) process.env.MISTRAL_ADMIN_API_KEY = saved;
+  }
+});
+
+test("getQuotaWindows maps usage + spend-limit into a monthly spend window", async () => {
+  const saved = process.env.MISTRAL_ADMIN_API_KEY;
+  process.env.MISTRAL_ADMIN_API_KEY = "admin-key-secret";
+  const requested = [];
+  try {
+    await withMockFetch(
+      async (url, init) => {
+        requested.push(String(url));
+        assert.equal(init.headers["x-api-key"], "admin-key-secret");
+        assert.ok(!init.headers.Authorization, "admin endpoints use x-api-key, not Bearer");
+        if (String(url).includes("/usage")) {
+          return jsonResponse(200, {
+            start_date: "2026-10-01T00:00:00Z",
+            end_date: "2026-10-31T23:59:59Z",
+            currency: "EUR",
+            usage: {
+              chat: { cost: 12.5 },
+              vibe_usage: { cost: 30 },
+            },
+          });
+        }
+        if (String(url).includes("/spend-limit")) {
+          return jsonResponse(200, { amount: 100, no_monthly_limit: false });
+        }
+        throw new Error(`unexpected url ${url}`);
+      },
+      async () => {
+        const result = await quotaMod.getQuotaWindows();
+        assert.equal(result.ok, true);
+        assert.equal(result.provider, "mistral");
+        assert.equal(result.source, "mistral-admin-api");
+        assert.equal(result.windows.length, 1);
+        const window = result.windows[0];
+        assert.equal(window.label, "Vibe monthly spend");
+        assert.equal(window.usedPercent, 30);
+        assert.equal(window.resetsAt, "2026-10-31T23:59:59.000Z");
+        assert.equal(window.valueLabel, "30 / 100 EUR spent");
+        assert.ok(window.detail.includes("2026-10-01"));
+      },
+    );
+    assert.equal(requested.length, 2);
+    assert.ok(requested.some((url) => url.includes("/usage?month=")));
+  } finally {
+    if (saved === undefined) delete process.env.MISTRAL_ADMIN_API_KEY;
+    else process.env.MISTRAL_ADMIN_API_KEY = saved;
+  }
+});
+
+test("getQuotaWindows reports usage without percent when no monthly limit is set", async () => {
+  const saved = process.env.MISTRAL_ADMIN_API_KEY;
+  process.env.MISTRAL_ADMIN_API_KEY = "admin-key-secret";
+  try {
+    await withMockFetch(
+      async (url) => {
+        if (String(url).includes("/usage")) {
+          return jsonResponse(200, {
+            start_date: "2026-10-01",
+            end_date: "2026-10-31",
+            currency: "USD",
+            usage: { vibe_usage: { cost: 7.25 } },
+          });
+        }
+        return jsonResponse(200, { amount: null, no_monthly_limit: true });
+      },
+      async () => {
+        const result = await quotaMod.getQuotaWindows();
+        assert.equal(result.ok, true);
+        const window = result.windows[0];
+        assert.equal(window.label, "Vibe monthly usage");
+        assert.equal(window.usedPercent, null);
+        assert.equal(window.valueLabel, "7.25 USD spent this period");
+      },
+    );
+  } finally {
+    if (saved === undefined) delete process.env.MISTRAL_ADMIN_API_KEY;
+    else process.env.MISTRAL_ADMIN_API_KEY = saved;
+  }
+});
+
+test("getQuotaWindows maps 401/403 to auth error families", async () => {
+  const saved = process.env.MISTRAL_ADMIN_API_KEY;
+  process.env.MISTRAL_ADMIN_API_KEY = "admin-key-secret";
+  try {
+    await withMockFetch(
+      async () => jsonResponse(401, { message: "unauthorized" }),
+      async () => {
+        const result = await quotaMod.getQuotaWindows();
+        assert.equal(result.ok, false);
+        assert.equal(result.errorFamily, "authentication_required");
+        assert.ok(!JSON.stringify(result).includes("admin-key-secret"));
+      },
+    );
+    await withMockFetch(
+      async () => jsonResponse(403, { message: "forbidden" }),
+      async () => {
+        const result = await quotaMod.getQuotaWindows();
+        assert.equal(result.ok, false);
+        assert.equal(result.errorFamily, "permission_denied");
+      },
+    );
+  } finally {
+    if (saved === undefined) delete process.env.MISTRAL_ADMIN_API_KEY;
+    else process.env.MISTRAL_ADMIN_API_KEY = saved;
+  }
+});
+
+test("getQuotaWindows reports provider_unavailable on network failure", async () => {
+  const saved = process.env.MISTRAL_ADMIN_API_KEY;
+  process.env.MISTRAL_ADMIN_API_KEY = "admin-key-secret";
+  try {
+    await withMockFetch(
+      async () => {
+        throw new Error("socket hangup");
+      },
+      async () => {
+        const result = await quotaMod.getQuotaWindows();
+        assert.equal(result.ok, false);
+        assert.equal(result.errorFamily, "provider_unavailable");
+        assert.ok(result.error.includes("socket hangup"));
+      },
+    );
+  } finally {
+    if (saved === undefined) delete process.env.MISTRAL_ADMIN_API_KEY;
+    else process.env.MISTRAL_ADMIN_API_KEY = saved;
+  }
+});
+
+test("createServerAdapter exposes getQuotaWindows", () => {
+  const adapter = server.createServerAdapter();
+  assert.equal(typeof adapter.getQuotaWindows, "function");
+});

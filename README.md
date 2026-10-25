@@ -78,6 +78,23 @@ Run **Test environment** on the agent. The test checks:
 - `MISTRAL_API_KEY` present (in the agent env or `$VIBE_HOME/.env`) — presence only, the value is never printed
 - Optional live auth probe: `GET https://api.mistral.ai/v1/models` with the agent's key (disable with `vibeAuthProbe: false`)
 
+## Quota dashboard (optional)
+
+Runs draw from the **Vibe plan's included monthly usage** (shared across Studio, the API, and Vibe Code for the plan); pay-as-you-go applies only if the org enables it. Paperclip's per-run token tracking always works.
+
+To surface the **remaining Vibe budget** in Paperclip's quota dashboard, set `MISTRAL_ADMIN_API_KEY` on the **Paperclip server process** (not per agent) to a Mistral **Admin API key** created in the Admin Panel. The adapter's `getQuotaWindows()` then queries:
+
+- `GET https://api.mistral.ai/v1/admin/usage?month=<m>&year=<y>` — org consumption by category, including the dedicated `vibe_usage` category
+- `GET https://api.mistral.ai/v1/admin/spend-limit` — the org monthly spending limit
+
+and reports a **"Vibe monthly spend"** window: percent of the org monthly limit consumed, resetting at the end of the billing period. Without the server-side key, the quota row is simply absent.
+
+Caveats:
+
+- The Admin API is **Enterprise-only**; a standard Code › Vibe CLI plan key does **not** work on admin endpoints.
+- The admin key is read from the server process environment only — it is never logged and never passed to agent runs.
+- Whether a **Team** plan's Vibe budget is per-seat or org-shared is unverified (Mistral docs don't say); confirm before relying on the percentage.
+
 ## Configuration reference
 
 See `agentConfigurationDoc` in the adapter (rendered in the Paperclip UI) for the full list. Highlights:

@@ -74,6 +74,18 @@ Runtime fields:
 - warmHandleIdleMs (number, optional): how long an idle agent process stays warm
   between runs (default 0 = shut down after each run).
 
+Quota dashboard (optional, Enterprise-only):
+- Paperclip polls each adapter's getQuotaWindows() for the quota dashboard. This
+  adapter reports the org's Vibe usage when the Paperclip SERVER process has
+  MISTRAL_ADMIN_API_KEY set (a Mistral Admin API key, created in the Admin
+  Panel; Enterprise plans only — a Code › Vibe CLI plan key does not work on
+  admin endpoints). The adapter queries GET /v1/admin/usage (vibe_usage
+  category) and GET /v1/admin/spend-limit (monthly spending limit) and reports
+  a "Vibe monthly spend" window (percent of the org limit consumed, reset at
+  the end of the billing period). Without the server-side key the quota row is
+  simply absent. The admin key is never passed to agent runs.
+- Per-run token usage is always tracked from the ACP stream regardless.
+
 Notes:
 - effort / thinkingEffort / fastMode are not forwarded: vibe-acp rejects them as
   unsupported config options.

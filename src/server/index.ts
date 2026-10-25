@@ -11,6 +11,7 @@ import {
   type,
 } from "../index.js";
 import { createMistralVibeAcpExecutor } from "./execute.js";
+import { getQuotaWindows } from "./quota.js";
 import { testEnvironment } from "./test.js";
 
 const execute = createMistralVibeAcpExecutor();
@@ -32,6 +33,7 @@ export function createServerAdapter(): ServerAdapterModule {
     supportsInstructionsBundle: true,
     instructionsPathKey: "instructionsFilePath",
     supportsLocalAgentJwt: true,
+    getQuotaWindows,
     getConfigSchema(): AdapterConfigSchema {
       return {
         fields: [
@@ -76,6 +78,15 @@ export function createServerAdapter(): ServerAdapterModule {
             hint: "KEY=VALUE lines. Set MISTRAL_API_KEY here (a Paperclip secret reference is supported). VIBE_HOME is always set per agent by the adapter.",
             group: "Runtime",
           },
+          {
+            key: "quotaWindowsNote",
+            label: "Quota dashboard",
+            type: "toggle",
+            default: false,
+            hint: "Read-only. Live Vibe quota windows appear when the Paperclip server has MISTRAL_ADMIN_API_KEY set (Mistral Admin API, Enterprise plans only). Not configurable per agent.",
+            group: "Quota",
+            meta: { readOnly: true },
+          },
         ],
       };
     },
@@ -83,5 +94,6 @@ export function createServerAdapter(): ServerAdapterModule {
 }
 
 export { execute };
+export { getQuotaWindows };
 export { testEnvironment };
 export { acpxSessionCodec as sessionCodec };
