@@ -1,0 +1,45 @@
+# Deploys the static marketing site in www/ to GitHub Pages.
+#
+# One-time setup (repo admin):
+#   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+#
+# After that, every push to main touching www/ (or this workflow)
+# publishes https://deltadrai.github.io/paperclip-adapter-mistral-vibe/
+
+name: Deploy www to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "www/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
