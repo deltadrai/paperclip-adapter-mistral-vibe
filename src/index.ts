@@ -17,7 +17,7 @@ export const models = [
 
 export const agentConfigurationDoc = `# mistral_vibe agent configuration
 
-Adapter: mistral_vibe (Mistral Vibe via the vibe-acp ACP server)
+Adapter: mistral_vibe (Mistral Vibe via vibe-acp ACP or the vibe CLI)
 
 Use when:
 - You want Paperclip to run agents on Mistral Vibe (Code › Vibe CLI plan keys)
@@ -25,9 +25,21 @@ Use when:
 - Multiple Vibe agents should run concurrently without sharing ~/.vibe
 
 Don't use when:
-- You want Vibe's terminal UI or the headless \`vibe -p\` path (only the ACP path is supported)
 - You want a plain Mistral API adapter (non-Vibe)
 - You run agents on a remote sandbox or another host
+
+Execution engines (engine):
+- acp (default): runs the standalone vibe-acp binary through Paperclip's shared
+  ACP engine. Supports interactive permission prompting surfaced in the
+  Paperclip UI. Requires Node >= 24.11 on the Paperclip server.
+- cli: runs the vibe CLI headless (vibe -p) — one process per run. Sessions
+  resume across runs via --resume (the id is stored in the agent's VIBE_HOME
+  and survives server restarts; a failed resume falls back to a fresh session).
+  Per-run usage and cost come from vibe's export.json. The CLI lane cannot ask
+  for approval mid-run: unanswered approval callbacks are auto-denied and
+  surfaced in the transcript, so pick the cliAgent profile up front. Install
+  via "uv tool install mistral-vibe" (installs vibe and vibe-acp side by
+  side) or download from https://github.com/mistralai/mistral-vibe/releases.
 
 Isolation model (important):
 - Every agent runs with its own VIBE_HOME (default: a stable per-agent directory
@@ -62,7 +74,15 @@ Core fields:
 - promptTemplate (string, optional): run prompt template.
 
 Runtime fields:
-- vibeAcpPath (string, optional): absolute path to the vibe-acp binary.
+- engine (string, optional): acp (default) | cli. Selects the execution engine;
+  the config form shows only the fields for the selected engine.
+- vibeAcpPath (string, optional, acp): absolute path to the vibe-acp binary.
+- vibeCliPath (string, optional, cli): absolute path to the vibe binary.
+  Resolution: vibeCliPath → PAPERCLIP_VIBE_CLI_PATH → vibe on PATH.
+- cliAgent (string, optional, cli, default auto-approve): tool-approval profile
+  for vibe -p — auto-approve | smart-approve | accept-edits | default.
+- cliFreshSession (boolean, optional, cli, default false): skip the stored
+  resume id and start a new vibe session.
 - vibeHome (string, optional): absolute VIBE_HOME override for this agent.
 - vibeAuthProbe (boolean, optional, default true): when true, the environment test
   performs a live GET https://api.mistral.ai/v1/models with the agent's key.

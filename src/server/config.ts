@@ -3,7 +3,27 @@ import path from "node:path";
 import { asString, parseObject, resolvePaperclipInstanceRootForAdapter } from "@paperclipai/adapter-utils/server-utils";
 
 export const VIBE_ACP_ENV_VAR = "PAPERCLIP_VIBE_ACP_PATH";
+export const VIBE_CLI_ENV_VAR = "PAPERCLIP_VIBE_CLI_PATH";
 export const MISTRAL_API_KEY_ENV_VAR = "MISTRAL_API_KEY";
+
+export type MistralVibeExecutionEngine = "acp" | "cli";
+
+/** Agent profiles `vibe -p` accepts for tool approval. */
+export const CLI_AGENT_PROFILES = ["auto-approve", "smart-approve", "accept-edits", "default"] as const;
+export type CliAgentProfile = (typeof CLI_AGENT_PROFILES)[number];
+
+export function resolveExecutionEngine(config: Record<string, unknown>): MistralVibeExecutionEngine {
+  const engine = typeof config.engine === "string" ? config.engine.trim().toLowerCase() : "";
+  return engine === "cli" ? "cli" : "acp";
+}
+
+/** Tool-approval profile for the CLI lane; auto-approve mirrors the ACP lane's approve-all default. */
+export function resolveCliAgent(config: Record<string, unknown>): CliAgentProfile {
+  const configured = typeof config.cliAgent === "string" ? config.cliAgent.trim().toLowerCase() : "";
+  return (CLI_AGENT_PROFILES as readonly string[]).includes(configured)
+    ? (configured as CliAgentProfile)
+    : "auto-approve";
+}
 
 export type VibeAcpCommandSource = "config" | "env" | "path";
 
@@ -42,6 +62,20 @@ export async function resolveVibeAcpCommand(
   const fromEnv = firstNonEmptyString(process.env[VIBE_ACP_ENV_VAR]);
   if (fromEnv) return { command: fromEnv, source: "env" };
   return { command: "vibe-acp", source: "path" };
+}
+
+/**
+ * Resolve the vibe CLI command and where it came from. Order:
+ * config.vibeCliPath → env PAPERCLIP_VIBE_CLI_PATH → `vibe` on PATH.
+ */
+export async function resolveVibeCliCommand(
+  config: Record<string, unknown>,
+): Promise<{ command: string; source: VibeAcpCommandSource }> {
+  const fromConfig = firstNonEmptyString(config.vibeCliPath);
+  if (fromConfig) return { command: fromConfig, source: "config" };
+  const fromEnv = firstNonEmptyString(process.env[VIBE_CLI_ENV_VAR]);
+  if (fromEnv) return { command: fromEnv, source: "env" };
+  return { command: "vibe", source: "path" };
 }
 
 /**
