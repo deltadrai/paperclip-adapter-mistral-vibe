@@ -22,11 +22,23 @@ export function createInstallCopy() {
     return ok;
   }
 
-  function markCopied(button) {
+  function selectCodeText(button) {
+    const holder = button.parentElement;
+    const code = holder ? holder.querySelector('code') : null;
+    if (!code || !document.createRange || !window.getSelection) return;
+
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function markLabel(button, label) {
     if (!button.dataset.label) {
       button.dataset.label = button.textContent;
     }
-    button.textContent = 'copied';
+    button.textContent = label;
     button.disabled = true;
     window.setTimeout(() => {
       button.textContent = button.dataset.label;
@@ -58,9 +70,11 @@ export function createInstallCopy() {
         }
 
         if (ok) {
-          markCopied(button);
+          markLabel(button, 'copied');
         } else {
-          console.warn('installCopy: copy unavailable — select the code and copy manually');
+          selectCodeText(button);
+          markLabel(button, 'press ctrl+c');
+          console.warn('installCopy: copy unavailable — code selected, copy manually');
         }
       });
     },

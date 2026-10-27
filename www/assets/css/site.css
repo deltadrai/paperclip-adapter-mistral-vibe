@@ -114,9 +114,29 @@ code, pre {
   display: block;
 }
 
-/* Pixel canvas */
+/* Sticky nav solid state after scroll */
+#site-nav {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+  border-bottom: 2px solid transparent;
+}
+
+#site-nav.nav-solid {
+  background: var(--cream);
+  border-bottom-color: var(--ink);
+}
+
+/* Pixel canvas — static sunset gradient as fallback before the canvas
+   draws and whenever the canvas bails (unsupported, zero-size, no JS) */
 #hero-canvas {
   image-rendering: pixelated;
+  background: linear-gradient(
+    to bottom,
+    var(--sunset-red),
+    var(--sunset-orange) 35%,
+    var(--sunset-amber) 60%,
+    var(--sunset-yellow) 85%,
+    var(--cream-tint)
+  );
 }
 
 /* Reduced motion: kill all CSS-driven motion */
