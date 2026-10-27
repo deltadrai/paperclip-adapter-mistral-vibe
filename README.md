@@ -7,6 +7,20 @@ External adapter plugin that runs [Mistral Vibe](https://github.com/mistralai/mi
 - Runs each agent with its **own Vibe state** (`VIBE_HOME`) and its **own Mistral API key**, so several Vibe agents can run concurrently.
 - Thin by design: `execute` delegates to Paperclip's shared ACP engine (`@paperclipai/adapter-utils/acpx-engine`) with `agent: "custom"` and `agentCommand: <vibe-acp path>`.
 
+## Execution engines
+
+The agent config's **Execution engine** field (`engine`) picks one of two lanes; the Paperclip form shows only the fields for the selected engine:
+
+| | `acp` (default) | `cli` |
+|---|---|---|
+| Process | standalone `vibe-acp` binary via Paperclip's shared ACP engine | one `vibe -p` process per run |
+| Interactive approval | Yes — permission requests surface in the Paperclip UI | No — decided up front by the `cliAgent` profile (default `auto-approve`); unanswered callbacks are auto-denied and logged |
+| Sessions | ACP engine session codec across heartbeats | `--resume <id>`, stored per agent in `VIBE_HOME`; failed resume falls back to a fresh session |
+| Usage / cost | ACP stream | vibe's per-run `export.json` (`usageBasis: per_run`) |
+| Node requirement | Node >= 24.11 (shared ACP engine) | none beyond the Paperclip server itself |
+
+The CLI lane needs the `vibe` binary (`uv tool install mistral-vibe` installs `vibe` and `vibe-acp` side by side). Resolution: `vibeCliPath` → `PAPERCLIP_VIBE_CLI_PATH` → `vibe` on `PATH`. Both lanes share the per-agent `VIBE_HOME` isolation model, the `config.toml` model seeding, and the workspace-trust seed.
+
 ## How it works
 
 ```mermaid
@@ -106,6 +120,11 @@ Caveats:
 See `agentConfigurationDoc` in the adapter (rendered in the Paperclip UI) for the full list. Highlights:
 
 - `model` (string): Mistral API model id. Default `mistral-medium-latest`.
+- `engine` (string): `acp` (default) | `cli` — see Execution engines above.
+- `vibeAcpPath` (string, acp): absolute path to the `vibe-acp` binary.
+- `vibeCliPath` (string, cli): absolute path to the `vibe` binary (`PAPERCLIP_VIBE_CLI_PATH`, then `PATH`).
+- `cliAgent` (string, cli): `auto-approve` (default) | `smart-approve` | `accept-edits` | `default`.
+- `cliFreshSession` (boolean, cli, default false): start a new vibe session instead of resuming.
 - `env` (object): `KEY=VALUE` variables for the agent process. `MISTRAL_API_KEY` belongs here. `VIBE_HOME` is always set per agent by the adapter and overrides any value here.
 - `vibeAcpPath` (string): absolute path to the `vibe-acp` binary.
 - `vibeHome` (string): absolute `VIBE_HOME` override for this agent.
