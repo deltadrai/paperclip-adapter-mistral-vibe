@@ -1,6 +1,6 @@
 {
   "name": "paperclip-adapter-mistral-vibe",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Mistral Vibe (vibe-acp) external adapter plugin for Paperclip",
   "type": "module",
   "license": "MIT",
