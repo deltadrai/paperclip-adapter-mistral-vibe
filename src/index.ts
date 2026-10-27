@@ -52,6 +52,18 @@ Isolation model (important):
   trusted_folders.toml, because ACP clients cannot answer Vibe's interactive
   workspace-trust prompt.
 
+Skills (both engines):
+- Skills assigned to this agent in the Paperclip UI sync into the agent's own
+  $VIBE_HOME/skills/ directory (symlinks to the materialized skill files).
+  Mistral Vibe discovers skills from there, and both engines share the same
+  per-agent VIBE_HOME, so the acp and cli lanes see the same skills.
+- The operational paperclip skill is mounted automatically so the agent can
+  report progress through the Paperclip API.
+- Each run re-asserts the desired links (repairs deleted or dangling links,
+  picks up version updates); sync problems are logged and never block a run.
+- User-installed skills in $VIBE_HOME/skills/ are left untouched and show up
+  as external entries in the UI.
+
 Prerequisites:
 - The standalone vibe-acp binary (self-contained; ships its own Python).
   Download vibe-acp-<platform>-<version>.tar.gz from

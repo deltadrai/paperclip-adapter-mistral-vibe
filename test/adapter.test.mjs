@@ -27,7 +27,7 @@ test("createServerAdapter shape matches the plugin contract", () => {
   assert.equal(typeof adapter.execute, "function");
   assert.equal(typeof adapter.testEnvironment, "function");
   assert.equal(adapter.acp.agentId, "custom");
-  assert.equal(adapter.acp.skillsMode, "unsupported");
+  assert.equal(adapter.acp.skillsMode, "ephemeral");
   assert.equal(adapter.runtimeToolDelivery, "environment");
   assert.equal(adapter.supportsInstructionsBundle, true);
   assert.equal(adapter.instructionsPathKey, "instructionsFilePath");

@@ -15,6 +15,7 @@ import {
 } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_MISTRAL_VIBE_MODEL } from "../index.js";
 import { resolveRunCwd } from "./execute.js";
+import { ensureMistralVibeSkillsLinked } from "./skills.js";
 import {
   type CliAgentProfile,
   ensureVibeConfigModel,
@@ -501,6 +502,7 @@ export function createMistralVibeCliExecutor(): (ctx: AdapterExecutionContext) =
     const model = asString(config.model, DEFAULT_MISTRAL_VIBE_MODEL).trim() || DEFAULT_MISTRAL_VIBE_MODEL;
     await ensureVibeConfigModel(vibeHome, model);
     await ensureVibeTrustedFolder(vibeHome, cwd);
+    await ensureMistralVibeSkillsLinked(config, agent.companyId, agent.id, ctx.onLog);
     const agentProfile = resolveCliAgent(config);
 
     const configuredEnv = parseObject(config.env);

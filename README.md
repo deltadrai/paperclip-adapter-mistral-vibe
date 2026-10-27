@@ -124,6 +124,15 @@ The model picker is not hardcoded-only: the adapter implements Paperclip's `list
 - **Credentials**: discovery runs in the Paperclip server process and uses `MISTRAL_API_KEY` or `MISTRAL_ADMIN_API_KEY` from the server environment (the former first; both work on `/v1/models`). Per-agent keys are never visible to it. With no key — or when the API is unreachable or rejects the key — the adapter serves the static list, so the picker always works.
 - **`detectModel()`** reads `active_model` (plus `[[models]]` aliases as candidates) from the host default `$VIBE_HOME/config.toml` (`~/.vibe` unless `VIBE_HOME` is set server-wide). Per-agent `VIBE_HOME` overrides are per agent and invisible to detection.
 
+## Skills (Paperclip skill library)
+
+Skills assigned to the agent in the Paperclip UI (agent → **Skills**, or the `desiredSkills` API field) sync into the agent's **own** `$VIBE_HOME/skills/` directory — the same place Mistral Vibe discovers user-installed skills. Both engines run with the same per-agent `VIBE_HOME`, so one sync serves the `acp` and `cli` lanes alike, including agents that switch engines later.
+
+- Assignment flow: the server records the selection in the agent's config, materializes the skill files under the Paperclip instance root, and calls the adapter's `syncSkills` hook, which symlinks each skill folder into `$VIBE_HOME/skills/<name>/`. Unassigning removes only Paperclip-managed links; user-installed skills in the same directory are never touched and appear as *external* in the UI.
+- The bundled operational `paperclip` skill is mounted automatically (the agent needs it to report progress through the Paperclip API).
+- Every run re-asserts the desired links before launch (self-healing: deleted or dangling links are repaired, skill version updates are picked up). A sync failure logs a `[paperclip]` note and never blocks the run.
+- Manual installs keep working: drop a skill folder into the agent's `$VIBE_HOME/skills/` and Vibe picks it up alongside the managed ones.
+
 ## Quota dashboard (optional)
 
 Runs draw from the **Vibe plan's included monthly usage** (shared across Studio, the API, and Vibe Code for the plan); pay-as-you-go applies only if the org enables it. Paperclip's per-run token tracking always works.

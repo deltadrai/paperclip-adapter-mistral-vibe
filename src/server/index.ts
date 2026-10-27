@@ -26,6 +26,7 @@ import {
   refreshMistralVibeModels,
 } from "./models.js";
 import { getQuotaWindows } from "./quota.js";
+import { listMistralVibeSkills, syncMistralVibeSkills } from "./skills.js";
 import { testEnvironment } from "./test.js";
 
 const acpExecutor = createMistralVibeAcpExecutor();
@@ -45,9 +46,12 @@ export function createServerAdapter(): ServerAdapterModule {
     agentConfigurationDoc,
     acp: {
       agentId: "custom",
-      skillsMode: "unsupported",
+      skillsMode: "ephemeral",
       prerequisites: {},
     },
+    listSkills: listMistralVibeSkills,
+    syncSkills: syncMistralVibeSkills,
+    requiresMaterializedRuntimeSkills: true,
     listModels: listMistralVibeModels,
     refreshModels: refreshMistralVibeModels,
     detectModel: detectMistralVibeModel,
