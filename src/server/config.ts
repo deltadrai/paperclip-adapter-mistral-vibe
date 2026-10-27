@@ -129,6 +129,44 @@ function hasTopLevelKey(content: string, key: string): boolean {
   return new RegExp(`^${key}\\s*=`, "m").test(content);
 }
 
+/** Any top-level `models = ...` inline key line (before the first table header). */
+const INLINE_MODELS_LINE = /^models[ \t]*=/;
+
+/** An inline empty-array `models = []` key line, tolerant of spacing/comments. */
+const EMPTY_INLINE_MODELS_LINE = /^models[ \t]*=[ \t]*\[[ \t]*\][ \t]*(?:#.*)?$/;
+
+/**
+ * Remove top-level `models = []` inline keys.
+ *
+ * Vibe persists an empty model map as an inline empty array (tomli_w), and
+ * appending a `[[models]]` block after such a key is invalid TOML: tomllib
+ * rejects it with "Cannot mutate immutable namespace ('models',)". Dropping
+ * the key is semantically neutral (absence == empty list) and repairs configs
+ * already corrupted by earlier appends.
+ *
+ * Returns the (possibly unchanged) content and whether a top-level inline
+ * `models` key remains — a non-empty inline array can never be followed by
+ * `[[models]]`, so callers must not append after it.
+ */
+function stripEmptyInlineModels(content: string): { content: string; hasInlineModels: boolean } {
+  const headerIndex = content.search(/^\[/m);
+  const topLevelEnd = headerIndex === -1 ? content.length : headerIndex;
+  const lines = content.slice(0, topLevelEnd).split("\n");
+  let hasInlineModels = false;
+  let stripped = false;
+  const kept = lines.filter((line) => {
+    if (!INLINE_MODELS_LINE.test(line)) return true;
+    if (!EMPTY_INLINE_MODELS_LINE.test(line)) {
+      hasInlineModels = true;
+      return true;
+    }
+    stripped = true;
+    return false;
+  });
+  if (!stripped) return { content, hasInlineModels };
+  return { content: kept.join("\n") + content.slice(topLevelEnd), hasInlineModels };
+}
+
 function hasModelAlias(content: string, alias: string): boolean {
   const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`^alias\\s*=\\s*"${escaped}"\\s*$`, "m").test(content);
@@ -144,7 +182,13 @@ function hasModelAlias(content: string, alias: string): boolean {
  * - existing file → replace the top-level `active_model` value in place, or
  *   prepend it at the very top (a bare key after a table header would attach
  *   to that table, and duplicate keys are a TOML error)
- * - append a `[[models]]` block only when no entry already declares the alias
+ * - append a `[[models]]` block only when no entry already declares the alias,
+ *   and only after dropping a top-level `models = []` inline key — vibe
+ *   persists an empty model map that way, and `[[models]]` after an inline
+ *   array is invalid TOML ("Cannot mutate immutable namespace"); dropping the
+ *   key also repairs configs already corrupted by earlier appends
+ * - a non-empty inline `models = [...]` key is left untouched and blocks the
+ *   append (it cannot be merged safely without a TOML parser)
  *
  * Writes happen only when the content actually changes, so the file's mtime
  * stays stable across runs with the same model.
@@ -168,7 +212,12 @@ export async function ensureVibeConfigModel(vibeHome: string, model: string): Pr
     } else {
       next = `active_model = ${tomlString(model)}\n${next.replace(/^\n+/, "")}`;
     }
-    if (!hasModelAlias(next, model)) {
+    const stripped = stripEmptyInlineModels(next);
+    next = stripped.content;
+    // A non-empty inline `models = [...]` cannot be merged without a TOML
+    // parser and cannot be followed by `[[models]]`: leave it untouched and
+    // skip the append so the file stays parseable.
+    if (!stripped.hasInlineModels && !hasModelAlias(next, model)) {
       if (!next.endsWith("\n")) next += "\n";
       next += `\n[[models]]\nname = ${tomlString(model)}\nprovider = "mistral"\nalias = ${tomlString(model)}\n`;
     }
