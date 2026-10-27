@@ -249,6 +249,61 @@ test("listMistralVibeSkills auto-includes the operational paperclip skill", asyn
   }
 });
 
+test("syncMistralVibeSkills repairs a managed link whose source moved (version update)", async () => {
+  const sources = await makeTmpDir("vibe-skills-sources-");
+  const vibeHome = await makeTmpDir("vibe-skills-home-");
+  try {
+    const sourceOld = await makeSkillSource(sources, "skill-a", "# skill-a v1\n");
+    const runtimeEntries = [entry("github/1/skill-a", "skill-a", sourceOld)];
+    await skills.syncMistralVibeSkills(ctxWith({ vibeHome, paperclipRuntimeSkills: runtimeEntries }), [
+      "github/1/skill-a",
+    ]);
+
+    // Simulate a skill version update: the materialized source directory moves.
+    const sourceNew = path.join(sources, "skill-a-v2");
+    await fs.rename(sourceOld, sourceNew);
+    await fs.writeFile(path.join(sourceNew, "SKILL.md"), "# skill-a v2\n", "utf8");
+    const updatedEntries = [entry("github/1/skill-a", "skill-a", sourceNew)];
+
+    await skills.syncMistralVibeSkills(ctxWith({ vibeHome, paperclipRuntimeSkills: updatedEntries }), [
+      "github/1/skill-a",
+    ]);
+
+    const target = path.join(vibeHome, "skills", "skill-a");
+    const linked = await fs.realpath(target);
+    assert.equal(linked, await fs.realpath(sourceNew));
+    const body = await fs.readFile(path.join(target, "SKILL.md"), "utf8");
+    assert.match(body, /# skill-a v2/);
+  } finally {
+    await fs.rm(sources, { recursive: true, force: true });
+    await fs.rm(vibeHome, { recursive: true, force: true });
+  }
+});
+
+test("listMistralVibeSkills reports an unassigned managed link as stale", async () => {
+  const sources = await makeTmpDir("vibe-skills-sources-");
+  const vibeHome = await makeTmpDir("vibe-skills-home-");
+  try {
+    const sourceA = await makeSkillSource(sources, "skill-a");
+    const runtimeEntries = [entry("github/1/skill-a", "skill-a", sourceA)];
+    await skills.syncMistralVibeSkills(ctxWith({ vibeHome, paperclipRuntimeSkills: runtimeEntries }), [
+      "github/1/skill-a",
+    ]);
+
+    // The agent's stored preference no longer includes skill-a, but the run
+    // has not re-synced yet: the managed link is still on disk.
+    const snapshot = await skills.listMistralVibeSkills(
+      ctxWith({ vibeHome, paperclipRuntimeSkills: runtimeEntries, paperclipSkillSync: { desiredSkills: [] } }),
+    );
+    const stale = snapshot.entries.find((e) => e.key === "github/1/skill-a");
+    assert.equal(stale.state, "stale");
+    assert.equal(stale.desired, false);
+  } finally {
+    await fs.rm(sources, { recursive: true, force: true });
+    await fs.rm(vibeHome, { recursive: true, force: true });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // ensureMistralVibeSkillsLinked (executor-time self-healing, both engines)
 // ---------------------------------------------------------------------------

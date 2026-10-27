@@ -47,10 +47,10 @@ async function resolveDesiredSkills(
 
 async function buildMistralVibeSkillSnapshot(
   input: MistralVibeSkillSyncInput,
+  availableEntries: Awaited<ReturnType<typeof readPaperclipRuntimeSkillEntries>>,
   desiredKeys: string[],
 ): Promise<AdapterSkillSnapshot> {
   const { config, companyId, agentId } = input;
-  const { availableEntries } = await resolveDesiredSkills(config);
   const skillsHome = resolveMistralVibeSkillsHome(config, companyId, agentId);
   const installed = await readInstalledSkillTargets(skillsHome);
   return buildPersistentSkillSnapshot({
@@ -72,7 +72,7 @@ async function buildMistralVibeSkillSnapshot(
 /** Report the current skill state of this agent's VIBE skills directory. */
 export async function listMistralVibeSkills(ctx: AdapterSkillContext): Promise<AdapterSkillSnapshot> {
   const { availableEntries, desiredKeys } = await resolveDesiredSkills(ctx.config);
-  return buildMistralVibeSkillSnapshot(ctx, desiredKeys);
+  return buildMistralVibeSkillSnapshot(ctx, availableEntries, desiredKeys);
 }
 
 /**
@@ -109,7 +109,7 @@ export async function syncMistralVibeSkills(
     await fs.unlink(path.join(skillsHome, name)).catch(() => {});
   }
 
-  return buildMistralVibeSkillSnapshot(ctx, Array.from(desiredSet));
+  return buildMistralVibeSkillSnapshot(ctx, availableEntries, Array.from(desiredSet));
 }
 
 /**
