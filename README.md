@@ -116,6 +116,14 @@ Run **Test environment** on the agent. The test branches on the engine and check
 - `cli`: `vibe` resolvable and `--version` reported (no ACP Node requirement)
 - both: `VIBE_HOME` resolvable and writable, `MISTRAL_API_KEY` present (in the agent env or `$VIBE_HOME/.env`) — presence only, the value is never printed, and the optional live auth probe: `GET https://api.mistral.ai/v1/models` with the agent's key (disable with `vibeAuthProbe: false`)
 
+## Model discovery
+
+The model picker is not hardcoded-only: the adapter implements Paperclip's `listModels` / `refreshModels` / `detectModel` hooks.
+
+- **`listModels()`** queries `GET https://api.mistral.ai/v1/models` and merges the result with the adapter's curated static list (deduped, sorted; known ids keep their friendly labels). The response is cached for 60s per key fingerprint. **`refreshModels()`** is the cache-bypass path used by the UI's refresh action.
+- **Credentials**: discovery runs in the Paperclip server process and uses `MISTRAL_API_KEY` or `MISTRAL_ADMIN_API_KEY` from the server environment (the former first; both work on `/v1/models`). Per-agent keys are never visible to it. With no key — or when the API is unreachable or rejects the key — the adapter serves the static list, so the picker always works.
+- **`detectModel()`** reads `active_model` (plus `[[models]]` aliases as candidates) from the host default `$VIBE_HOME/config.toml` (`~/.vibe` unless `VIBE_HOME` is set server-wide). Per-agent `VIBE_HOME` overrides are per agent and invisible to detection.
+
 ## Quota dashboard (optional)
 
 Runs draw from the **Vibe plan's included monthly usage** (shared across Studio, the API, and Vibe Code for the plan); pay-as-you-go applies only if the org enables it. Paperclip's per-run token tracking always works.
@@ -137,8 +145,7 @@ Caveats:
 
 See `agentConfigurationDoc` in the adapter (rendered in the Paperclip UI) for the full list. Highlights:
 
-- `model` (string): Mistral API model id. Default `mistral-medium-latest`.
-- `engine` (string): `acp` (default) | `cli` — see Execution engines above.
+- `model` (string): Mistral API model id. Default `mistral-medium-latest`.- `engine` (string): `acp` (default) | `cli` — see Execution engines above.
 - `vibeAcpPath` (string, acp): absolute path to the `vibe-acp` binary.
 - `vibeCliPath` (string, cli): absolute path to the `vibe` binary (`PAPERCLIP_VIBE_CLI_PATH`, then `PATH`).
 - `cliAgent` (string, cli): `auto-approve` (default) | `smart-approve` | `accept-edits` | `default`.

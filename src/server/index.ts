@@ -20,6 +20,11 @@ import {
 import { CLI_AGENT_PROFILES, resolveExecutionEngine } from "./config.js";
 import { createMistralVibeAcpExecutor } from "./execute.js";
 import { createMistralVibeCliExecutor } from "./cli-execute.js";
+import {
+  detectMistralVibeModel,
+  listMistralVibeModels,
+  refreshMistralVibeModels,
+} from "./models.js";
 import { getQuotaWindows } from "./quota.js";
 import { testEnvironment } from "./test.js";
 
@@ -43,6 +48,9 @@ export function createServerAdapter(): ServerAdapterModule {
       skillsMode: "unsupported",
       prerequisites: {},
     },
+    listModels: listMistralVibeModels,
+    refreshModels: refreshMistralVibeModels,
+    detectModel: detectMistralVibeModel,
     runtimeToolDelivery: "environment",
     supportsInstructionsBundle: true,
     instructionsPathKey: "instructionsFilePath",

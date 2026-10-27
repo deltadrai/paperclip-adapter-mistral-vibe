@@ -63,8 +63,15 @@ Prerequisites:
 
 Core fields:
 - model (string, optional): Mistral API model id. Defaults to mistral-medium-latest.
-  The adapter writes it into the agent's VIBE_HOME/config.toml so vibe-acp accepts
-  the model the ACP engine selects.
+  The model picker merges live discovery (GET /v1/models via the server-side
+  MISTRAL_API_KEY or MISTRAL_ADMIN_API_KEY) with the adapter's static list;
+  without a server-side key the static list is served. refreshModels bypasses
+  the discovery cache; detectModel reads active_model from the host default
+  $VIBE_HOME/config.toml.
+- The selected model is written into the agent's VIBE_HOME/config.toml
+  (active_model + [[models]] alias) so both engines run on it: vibe-acp
+  accepts the model the ACP engine selects via session/set_config_option,
+  and the CLI lane runs on the config.toml active model.
 - env (object, optional): KEY=VALUE environment variables for the agent process.
   Set MISTRAL_API_KEY here (a Paperclip secret reference is supported).
   VIBE_HOME is always set per agent by the adapter and overrides any value here.
