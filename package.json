@@ -4,7 +4,7 @@
   "description": "Mistral Vibe (vibe-acp) external adapter plugin for Paperclip",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/deltadrai/paperclip-adapter-mistral-vibe",
+  "homepage": "https://deltadrai.github.io/paperclip-adapter-mistral-vibe",
   "repository": {
     "type": "git",
     "url": "https://github.com/deltadrai/paperclip-adapter-mistral-vibe.git"
