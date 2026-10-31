@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="32" height="32" shape-rendering="crispEdges">
+  <!-- pixel wall socket: adapter plugs in -->
+  <rect x="0" y="0" width="16" height="16" fill="#0A0A0A"/>
+  <rect x="2" y="2" width="12" height="12" fill="#FFF4D6"/>
+  <!-- earth hole -->
+  <rect x="7" y="3" width="2" height="2" fill="#0A0A0A"/>
+  <!-- left plug hole (pixel circle, 5x5) -->
+  <rect x="4" y="6" width="3" height="1" fill="#FA500C"/>
+  <rect x="3" y="7" width="5" height="3" fill="#FA500C"/>
+  <rect x="4" y="10" width="3" height="1" fill="#FA500C"/>
+  <!-- right plug hole (pixel circle, 5x5) -->
+  <rect x="9" y="6" width="3" height="1" fill="#FA500C"/>
+  <rect x="8" y="7" width="5" height="3" fill="#FA500C"/>
+  <rect x="9" y="10" width="3" height="1" fill="#FA500C"/>
+</svg>

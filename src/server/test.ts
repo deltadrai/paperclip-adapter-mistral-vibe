@@ -16,10 +16,13 @@ import { asString, parseObject } from "@paperclipai/adapter-utils/server-utils";
 import {
   MISTRAL_API_KEY_ENV_VAR,
   VIBE_ACP_ENV_VAR,
+  VIBE_CLI_ENV_VAR,
   configHasMistralApiKey,
   ensureVibeHomeDir,
   pathIsExecutable,
+  resolveExecutionEngine,
   resolveVibeAcpCommand,
+  resolveVibeCliCommand,
   resolveVibeHome,
 } from "./config.js";
 
@@ -183,35 +186,46 @@ export async function testEnvironment(
   const targetIsRemote = target?.kind === "remote";
   const envLabel = ctx.environmentName ? ` (${ctx.environmentName})` : "";
 
+  const engine = resolveExecutionEngine(config);
   checks.push({
     code: "mistral_vibe_engine_selected",
     level: "info",
-    message: `Execution engine selected: ACP (vibe-acp) via the shared Paperclip ACP engine${envLabel}.`,
+    message:
+      engine === "cli"
+        ? `Execution engine selected: vibe CLI (vibe -p headless runs, sessions resume via --resume)${envLabel}.`
+        : `Execution engine selected: ACP (vibe-acp) via the shared Paperclip ACP engine${envLabel}.`,
   });
 
-  // Node runtime requirement of the shared ACP engine.
-  const nodeOk = nodeVersionMeetsAcpMinimum();
-  checks.push({
-    code: nodeOk ? "mistral_vibe_node_supported" : "mistral_vibe_node_unsupported",
-    level: nodeOk ? "info" : "error",
-    message: nodeOk
-      ? `Node ${process.version} satisfies the ACP engine requirement (>=${MIN_ACP_NODE_VERSION}).`
-      : `Node ${process.version} does not satisfy the ACP engine requirement (>=${MIN_ACP_NODE_VERSION}).`,
-    hint: nodeOk ? undefined : `Run Paperclip with Node >=${MIN_ACP_NODE_VERSION}.`,
-  });
+  // The Node >= 24.11 requirement belongs to the shared ACP engine; the CLI
+  // lane spawns vibe directly from this server process.
+  if (engine === "acp") {
+    const nodeOk = nodeVersionMeetsAcpMinimum();
+    checks.push({
+      code: nodeOk ? "mistral_vibe_node_supported" : "mistral_vibe_node_unsupported",
+      level: nodeOk ? "info" : "error",
+      message: nodeOk
+        ? `Node ${process.version} satisfies the ACP engine requirement (>=${MIN_ACP_NODE_VERSION}).`
+        : `Node ${process.version} does not satisfy the ACP engine requirement (>=${MIN_ACP_NODE_VERSION}).`,
+      hint: nodeOk ? undefined : `Run Paperclip with Node >=${MIN_ACP_NODE_VERSION}.`,
+    });
+  }
 
-  // vibe-acp binary resolvable.
-  const resolved = await resolveVibeAcpCommand(config);
+  // Agent binary resolvable, per engine.
+  const resolved =
+    engine === "cli" ? await resolveVibeCliCommand(config) : await resolveVibeAcpCommand(config);
+  const binaryLabel = engine === "cli" ? "vibe CLI" : "vibe-acp";
+  const installHint =
+    engine === "cli"
+      ? `Install the vibe CLI (uv tool install mistral-vibe, or download from https://github.com/mistralai/mistral-vibe) and set vibeCliPath in the agent config or ${VIBE_CLI_ENV_VAR} in the server environment.`
+      : `Install the standalone vibe-acp binary (see README) and set vibeAcpPath in the agent config or ${VIBE_ACP_ENV_VAR} in the server environment.`;
   const commandResolvable = await commandIsResolvable(resolved.command, resolveConfigPath(config), ctx);
   checks.push({
     code: commandResolvable ? "mistral_vibe_binary_resolvable" : "mistral_vibe_binary_missing",
     level: commandResolvable ? "info" : "error",
     message: commandResolvable
-      ? `vibe-acp command is available: ${resolved.command} (source: ${resolved.source})`
-      : `vibe-acp command is not available: ${resolved.command} (source: ${resolved.source})`,
-    hint: commandResolvable
-      ? undefined
-      : `Install the standalone vibe-acp binary (see README) and set vibeAcpPath in the agent config or ${VIBE_ACP_ENV_VAR} in the server environment.`,
+      ? `${binaryLabel} command is available: ${resolved.command} (source: ${resolved.source})`
+      : `${binaryLabel} command is not available: ${resolved.command} (source: ${resolved.source})`,
+    hint: commandResolvable ? undefined : installHint,
   });
 
   // Version probe (local lane only; remote targets are probed by the resolvability check).
@@ -221,12 +235,12 @@ export async function testEnvironment(
       code: version.version ? "mistral_vibe_binary_version" : "mistral_vibe_binary_version_failed",
       level: version.version ? "info" : "warn",
       message: version.version
-        ? `vibe-acp version reported: ${version.version}`
-        : "vibe-acp did not report a version with --version.",
+        ? `${binaryLabel} version reported: ${version.version}`
+        : `${binaryLabel} did not report a version with --version.`,
       detail: version.detail ?? undefined,
       hint: version.version
         ? undefined
-        : "Verify the binary is the standalone vibe-acp release (not a wrapper script).",
+        : `Verify the command is the real ${binaryLabel} (not a wrapper script).`,
     });
   }
 

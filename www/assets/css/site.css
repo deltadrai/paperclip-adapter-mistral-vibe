@@ -1,0 +1,148 @@
+/* paperclip-adapter-mistral-vibe — pixel visual system
+   Fallback base + custom pixel classes. Tailwind (Play CDN) handles
+   layout/spacing utilities; this file carries the mistral.ai pixel style. */
+
+:root {
+  --cream: #FAF9F5;
+  --cream-tint: #FFF4D6;
+  --ink: #0A0A0A;
+  --sunset-red: #E63600;
+  --sunset-orange: #FA500C;
+  --sunset-amber: #FFAA00;
+  --sunset-yellow: #FFD800;
+}
+
+/* Base — also the no-Tailwind fallback */
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+}
+
+code, pre {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+/* Pixel type accents */
+.pixel-font {
+  font-family: "Silkscreen", monospace;
+}
+
+/* Stepped gradient band between sections (hard stops, coarse steps) */
+.pixel-divider {
+  height: 8px;
+  background: linear-gradient(
+    to right,
+    var(--cream) 0 20%,
+    var(--sunset-yellow) 20% 40%,
+    var(--sunset-amber) 40% 60%,
+    var(--sunset-orange) 60% 80%,
+    var(--sunset-red) 80% 100%
+  );
+}
+
+/* Closing sunset stripe above the footer: red -> cream, hard stops */
+.sunset-stripe {
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    var(--sunset-red) 0 25%,
+    var(--sunset-orange) 25% 50%,
+    var(--sunset-amber) 50% 75%,
+    var(--sunset-yellow) 75% 90%,
+    var(--cream-tint) 90% 100%
+  );
+}
+
+/* Hard-shadow buttons */
+.btn-hard {
+  display: inline-block;
+  background: var(--cream);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.btn-hard:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.btn-hard:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.btn-hard-primary {
+  background: var(--sunset-orange);
+  color: var(--cream);
+}
+
+/* Hard-shadow cards */
+.card-hard {
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+/* Code blocks */
+.code-hard {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  margin: 0;
+}
+
+/* Badge chips for shields.io images */
+.badge-chip {
+  display: inline-block;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.badge-chip img {
+  display: block;
+}
+
+/* Sticky nav solid state after scroll */
+#site-nav {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+  border-bottom: 2px solid transparent;
+}
+
+#site-nav.nav-solid {
+  background: var(--cream);
+  border-bottom-color: var(--ink);
+}
+
+/* Pixel canvas — static sunset gradient as fallback before the canvas
+   draws and whenever the canvas bails (unsupported, zero-size, no JS) */
+#hero-canvas {
+  image-rendering: pixelated;
+  background: linear-gradient(
+    to bottom,
+    var(--sunset-red),
+    var(--sunset-orange) 35%,
+    var(--sunset-amber) 60%,
+    var(--sunset-yellow) 85%,
+    var(--cream-tint)
+  );
+}
+
+/* Reduced motion: kill all CSS-driven motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

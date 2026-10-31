@@ -10,6 +10,7 @@ import {
 import type { AcpxEngineExecutorOptions, AcpxEngineBillingIdentity } from "@paperclipai/adapter-utils/acpx-engine/execute";
 import { asString, parseObject } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_MISTRAL_VIBE_MODEL } from "../index.js";
+import { ensureMistralVibeSkillsLinked } from "./skills.js";
 import {
   MISTRAL_API_KEY_ENV_VAR,
   ensureVibeConfigModel,
@@ -150,6 +151,7 @@ export function createMistralVibeAcpExecutor(
     const model = asString(ctx.config.model, DEFAULT_MISTRAL_VIBE_MODEL).trim() || DEFAULT_MISTRAL_VIBE_MODEL;
     await ensureVibeConfigModel(vibeHome, model);
     await ensureVibeTrustedFolder(vibeHome, cwd);
+    await ensureMistralVibeSkillsLinked(ctx.config, ctx.agent.companyId, ctx.agent.id, ctx.onLog);
 
     let currentExecutor = executor;
     if (!currentExecutor) {

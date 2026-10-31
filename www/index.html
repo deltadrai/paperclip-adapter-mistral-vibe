@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mistral Vibe adapter for Paperclip</title>
+  <meta name="description" content="Run Mistral Vibe agents in Paperclip — over ACP (vibe-acp) or headless via the vibe CLI. Each agent gets its own Vibe state and its own Mistral API key.">
+  <link rel="canonical" href="https://deltadrai.github.io/paperclip-adapter-mistral-vibe/">
+  <meta property="og:title" content="Mistral Vibe adapter for Paperclip">
+  <meta property="og:description" content="Run Mistral Vibe agents in Paperclip — over ACP (vibe-acp) or headless via the vibe CLI.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://deltadrai.github.io/paperclip-adapter-mistral-vibe/">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-cream: #FAF9F5;
+      --color-creamtint: #FFF4D6;
+      --color-ink: #0A0A0A;
+      --color-sunsetred: #E63600;
+      --color-sunsetorange: #FA500C;
+      --color-sunsetamber: #FFAA00;
+      --color-sunsetyellow: #FFD800;
+      --font-pixel: "Silkscreen", monospace;
+      --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    }
+  </style>
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/+esm",
+        "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/ScrollTrigger/+esm"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="bg-cream text-ink font-sans antialiased">
+
+  <!-- Nav -->
+  <header id="site-nav" class="fixed top-0 left-0 right-0 z-50">
+    <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3" aria-label="Main navigation">
+      <a href="#" class="flex items-center gap-3">
+        <img src="assets/img/logo-pixel.svg" alt="Mistral Vibe pixel socket logo" width="28" height="28">
+        <span class="font-extrabold tracking-tight text-sm md:text-base">Mistral Vibe <span class="font-medium text-ink/60">Adapter for Paperclip</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="#features" class="font-medium hover:text-sunsetorange">Features</a>
+        <a href="#engines" class="font-medium hover:text-sunsetorange">Engines</a>
+        <a href="#install" class="font-medium hover:text-sunsetorange">Install</a>
+        <a class="badge-chip" href="https://github.com/deltadrai/paperclip-adapter-mistral-vibe" target="_blank" rel="noopener" aria-label="Star on GitHub">
+          <img src="https://img.shields.io/github/stars/deltadrai/paperclip-adapter-mistral-vibe?style=social" alt="GitHub stars">
+        </a>
+        <a class="badge-chip" href="https://www.npmjs.com/package/paperclip-adapter-mistral-vibe" target="_blank" rel="noopener" aria-label="npm package version">
+          <img src="https://img.shields.io/npm/v/paperclip-adapter-mistral-vibe" alt="npm version">
+        </a>
+        <a class="badge-chip" href="https://github.com/deltadrai/paperclip-adapter-mistral-vibe/blob/main/LICENSE" target="_blank" rel="noopener" aria-label="MIT license">
+          <img src="https://img.shields.io/npm/l/paperclip-adapter-mistral-vibe" alt="MIT license">
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative flex items-center overflow-hidden">
+    <canvas id="hero-canvas" class="absolute inset-0 w-full h-full" aria-hidden="true"></canvas>
+    <div class="absolute inset-0 bg-gradient-to-b from-ink/55 via-ink/10 to-transparent" aria-hidden="true"></div>
+    <div class="relative z-10 max-w-6xl mx-auto px-4 pt-28 pb-20 md:pt-36 md:pb-24 text-creamtint">
+      <p data-hero class="pixel-font text-sm md:text-base text-sunsetyellow tracking-widest mb-6">PAPERCLIP ADAPTER</p>
+      <h1 data-hero class="text-4xl md:text-6xl font-extrabold tracking-tight max-w-3xl mb-6 drop-shadow-[0_2px_0_rgba(10,10,10,0.35)]">
+        Run Mistral Vibe agents in Paperclip.
+      </h1>
+      <p data-hero class="text-lg md:text-xl max-w-2xl text-cream">
+        External adapter plugin that runs Mistral Vibe agents — over ACP (<code class="text-sunsetyellow">vibe-acp</code>) or headless via the <code class="text-sunsetyellow">vibe</code> CLI. Each agent gets its own Vibe state and its own Mistral API key, so agents run side by side without colliding.
+      </p>
+      <p data-hero class="pixel-font text-xs md:text-sm text-cream/80 mt-8">
+        Made with Le Chonk · Mistral Large 4 (preview)
+      </p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="pixel-divider" aria-hidden="true"></div>
+  <section id="features" class="max-w-6xl mx-auto px-4 py-20">
+    <p data-reveal class="pixel-font text-sm text-sunsetorange tracking-widest mb-3">WHAT YOU GET</p>
+    <h2 data-reveal class="text-3xl md:text-4xl font-extrabold tracking-tight mb-12">Built for concurrency, thin by design</h2>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Per-agent isolation</h3>
+        <p class="text-ink/80">Every agent gets its own <code>VIBE_HOME</code> and its own Mistral API key. Config, sessions, caches and history never collide — concurrent agents can't corrupt each other.</p>
+      </div>
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Two execution engines</h3>
+        <p class="text-ink/80">Pick per agent: interactive ACP (<code>vibe-acp</code>) with approvals in the Paperclip UI, or headless <code>vibe&nbsp;-p</code> runs with policy-based approvals.</p>
+      </div>
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Live model discovery</h3>
+        <p class="text-ink/80"><code>listModels</code> / <code>refreshModels</code> query the Mistral API and merge with a curated static list, so the model picker always works — even offline.</p>
+      </div>
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Skills sync</h3>
+        <p class="text-ink/80">Paperclip's skill library symlinks into the agent's own <code>$VIBE_HOME/skills/</code>. Self-healing on every run; user-installed skills stay untouched.</p>
+      </div>
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Quota dashboard</h3>
+        <p class="text-ink/80">Optional "Vibe monthly spend" window for Paperclip's quota dashboard via the Mistral Admin API (Enterprise-only). Absent when not configured.</p>
+      </div>
+      <div data-reveal class="card-hard p-6">
+        <h3 class="font-bold text-lg mb-2">Thin by design</h3>
+        <p class="text-ink/80">The ACP lane delegates to Paperclip's shared ACP engine; the CLI lane maps the <code>vibe</code> NDJSON stream to the run transcript. MIT licensed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Engines -->
+  <div class="pixel-divider" aria-hidden="true"></div>
+  <section id="engines" class="max-w-6xl mx-auto px-4 py-20">
+    <p data-reveal class="pixel-font text-sm text-sunsetorange tracking-widest mb-3">EXECUTION ENGINES</p>
+    <h2 data-reveal class="text-3xl md:text-4xl font-extrabold tracking-tight mb-12">One adapter, two lanes</h2>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div data-reveal class="card-hard p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="pixel-font text-xs bg-sunsetorange text-cream px-3 py-2">acp</span>
+          <span class="font-medium text-ink/60">default</span>
+        </div>
+        <ul class="space-y-3 text-ink/80">
+          <li><strong>Process:</strong> standalone <code>vibe-acp</code> binary via Paperclip's shared ACP engine.</li>
+          <li><strong>Approvals:</strong> interactive — permission requests surface in the Paperclip UI.</li>
+          <li><strong>Sessions:</strong> ACP engine session codec, resume across heartbeats.</li>
+          <li><strong>Usage / cost:</strong> from the ACP stream.</li>
+          <li><strong>Requirements:</strong> Node&nbsp;&gt;=&nbsp;24.11 on the Paperclip server.</li>
+        </ul>
+      </div>
+      <div data-reveal class="card-hard p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="pixel-font text-xs bg-ink text-cream px-3 py-2">cli</span>
+          <span class="font-medium text-ink/60">headless</span>
+        </div>
+        <ul class="space-y-3 text-ink/80">
+          <li><strong>Process:</strong> one <code>vibe&nbsp;-p</code> process per run.</li>
+          <li><strong>Approvals:</strong> decided up front by the <code>cliAgent</code> profile (default <code>auto-approve</code>).</li>
+          <li><strong>Sessions:</strong> <code>--resume</code>, stored per agent in <code>VIBE_HOME</code>; failed resume falls back to a fresh session.</li>
+          <li><strong>Usage / cost:</strong> from vibe's per-run <code>export.json</code>.</li>
+          <li><strong>Requirements:</strong> none beyond the Paperclip server itself.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <div class="pixel-divider" aria-hidden="true"></div>
+  <section id="install" class="max-w-6xl mx-auto px-4 py-20">
+    <p data-reveal class="pixel-font text-sm text-sunsetorange tracking-widest mb-3">GET STARTED</p>
+    <h2 data-reveal class="text-3xl md:text-4xl font-extrabold tracking-tight mb-12">Install in three steps</h2>
+    <div class="grid gap-6">
+      <div data-reveal class="card-hard p-6 md:p-8">
+        <div class="flex items-center gap-4 mb-4">
+          <span class="pixel-font text-sm bg-sunsetyellow text-ink w-9 h-9 flex items-center justify-center shrink-0">1</span>
+          <h3 class="font-bold text-lg">Install the adapter</h3>
+        </div>
+        <p class="text-ink/80 mb-4">In Paperclip: <strong>Settings → Adapters → Install from npm</strong>, then enter the package name.</p>
+        <div class="flex items-center gap-3">
+          <pre class="code-hard flex-1 overflow-x-auto"><code>paperclip-adapter-mistral-vibe</code></pre>
+          <button data-copy="paperclip-adapter-mistral-vibe" class="btn-hard px-3 py-2 shrink-0 pixel-font text-xs">copy</button>
+        </div>
+      </div>
+      <div data-reveal class="card-hard p-6 md:p-8">
+        <div class="flex items-center gap-4 mb-4">
+          <span class="pixel-font text-sm bg-sunsetyellow text-ink w-9 h-9 flex items-center justify-center shrink-0">2</span>
+          <h3 class="font-bold text-lg">Get the Vibe runtime + API key</h3>
+        </div>
+        <p class="text-ink/80 mb-4">Install the <code>vibe</code> CLI (registers <code>vibe-acp</code> side by side) or download the standalone <code>vibe-acp</code> binary from the <a class="text-sunsetorange underline" href="https://github.com/mistralai/mistral-vibe/releases" target="_blank" rel="noopener">mistral-vibe releases</a>. Create a Mistral API key under <strong>Code › Vibe CLI</strong> in the <a class="text-sunsetorange underline" href="https://console.mistral.ai" target="_blank" rel="noopener">Mistral console</a>.</p>
+        <div class="flex items-center gap-3">
+          <pre class="code-hard flex-1 overflow-x-auto"><code>uv tool install mistral-vibe</code></pre>
+          <button data-copy="uv tool install mistral-vibe" class="btn-hard px-3 py-2 shrink-0 pixel-font text-xs">copy</button>
+        </div>
+      </div>
+      <div data-reveal class="card-hard p-6 md:p-8">
+        <div class="flex items-center gap-4 mb-4">
+          <span class="pixel-font text-sm bg-sunsetyellow text-ink w-9 h-9 flex items-center justify-center shrink-0">3</span>
+          <h3 class="font-bold text-lg">Add an agent</h3>
+        </div>
+        <p class="text-ink/80 mb-4"><strong>Add agent → Mistral Vibe</strong>: pick the execution engine and model, put your key in the agent env, then run <strong>Test environment</strong>.</p>
+        <div class="flex items-center gap-3">
+          <pre class="code-hard flex-1 overflow-x-auto"><code>MISTRAL_API_KEY=&lt;your key&gt;</code></pre>
+          <button data-copy="MISTRAL_API_KEY=<your key>" class="btn-hard px-3 py-2 shrink-0 pixel-font text-xs">copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="sunset-stripe" aria-hidden="true"></div>
+  <footer class="bg-ink text-cream">
+    <div class="max-w-6xl mx-auto px-4 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <img src="assets/img/logo-pixel.svg" alt="Mistral Vibe pixel socket logo" width="24" height="24">
+        <p class="text-cream/70">© <span id="footer-year"></span> <a class="underline hover:text-sunsetyellow" href="https://github.com/deltadrai" target="_blank" rel="noopener">deltadrai</a> — MIT license</p>
+      </div>
+      <nav class="flex flex-wrap gap-6" aria-label="Footer">
+        <a class="text-cream/70 hover:text-sunsetyellow" href="https://github.com/deltadrai/paperclip-adapter-mistral-vibe" target="_blank" rel="noopener">GitHub</a>
+        <a class="text-cream/70 hover:text-sunsetyellow" href="https://www.npmjs.com/package/paperclip-adapter-mistral-vibe" target="_blank" rel="noopener">npm</a>
+        <a class="text-cream/70 hover:text-sunsetyellow" href="https://paperclip.ing" target="_blank" rel="noopener">Paperclip</a>
+        <a class="text-cream/70 hover:text-sunsetyellow" href="https://github.com/mistralai/mistral-vibe" target="_blank" rel="noopener">Mistral Vibe</a>
+        <a class="text-cream/70 hover:text-sunsetyellow" href="https://github.com/deltadrai/paperclip-adapter-mistral-vibe/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>

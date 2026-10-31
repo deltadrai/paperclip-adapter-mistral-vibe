@@ -27,7 +27,7 @@ test("createServerAdapter shape matches the plugin contract", () => {
   assert.equal(typeof adapter.execute, "function");
   assert.equal(typeof adapter.testEnvironment, "function");
   assert.equal(adapter.acp.agentId, "custom");
-  assert.equal(adapter.acp.skillsMode, "unsupported");
+  assert.equal(adapter.acp.skillsMode, "ephemeral");
   assert.equal(adapter.runtimeToolDelivery, "environment");
   assert.equal(adapter.supportsInstructionsBundle, true);
   assert.equal(adapter.instructionsPathKey, "instructionsFilePath");
@@ -182,6 +182,69 @@ test("ensureVibeConfigModel prepends active_model when missing and is idempotent
   assert.equal(mtime2, mtime1, "idempotent call must not rewrite the file");
   const aliasCount = (second.match(/^alias = "mistral-medium-latest"$/gm) || []).length;
   assert.equal(aliasCount, 1);
+});
+
+test("ensureVibeConfigModel drops an inline `models = []` key before appending [[models]]", async () => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "vibe-home-"));
+  // Shape vibe itself persists via tomli_w when its internal models map is
+  // empty: top-level scalars plus an inline empty `models` array.
+  const original = [
+    'active_model = "mistral-medium-latest"',
+    "api_timeout = 720.0",
+    "enable_telemetry = true",
+    "models = []",
+    "",
+  ].join("\n");
+  await fs.writeFile(path.join(home, "config.toml"), original);
+  await config.ensureVibeConfigModel(home, "mistral-medium-latest");
+  const raw = await fs.readFile(path.join(home, "config.toml"), "utf8");
+  assert.ok(!/^models\s*=/m.test(raw), "inline models key must be removed");
+  assert.match(raw, /^\[\[models\]\]$/m);
+  assert.match(raw, /^alias = "mistral-medium-latest"$/m);
+});
+
+test("ensureVibeConfigModel repairs a config corrupted by an earlier append after `models = []`", async () => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "vibe-home-"));
+  // Exactly the state that bricked sessions: vibe wrote `models = []`, a
+  // previous adapter run appended `[[models]]` after it (invalid TOML).
+  const corrupt = [
+    'active_model = "mistral-medium-latest"',
+    "api_timeout = 720.0",
+    "enable_telemetry = true",
+    "models = []",
+    "",
+    "[[models]]",
+    'name = "mistral-medium-latest"',
+    'provider = "mistral"',
+    'alias = "mistral-medium-latest"',
+    "",
+  ].join("\n");
+  await fs.writeFile(path.join(home, "config.toml"), corrupt);
+  await config.ensureVibeConfigModel(home, "mistral-medium-latest");
+  const raw = await fs.readFile(path.join(home, "config.toml"), "utf8");
+  assert.ok(!/^models\s*=/m.test(raw), "inline models key must be removed");
+  assert.match(raw, /^\[\[models\]\]$/m);
+  const aliasCount = (raw.match(/^alias = "mistral-medium-latest"$/gm) || []).length;
+  assert.equal(aliasCount, 1, "must not duplicate the models block");
+  const mtime1 = (await fs.stat(path.join(home, "config.toml"))).mtimeMs;
+  await config.ensureVibeConfigModel(home, "mistral-medium-latest");
+  const mtime2 = (await fs.stat(path.join(home, "config.toml"))).mtimeMs;
+  assert.equal(mtime2, mtime1, "repair must be idempotent");
+});
+
+test("ensureVibeConfigModel never appends [[models]] after a non-empty inline models array", async () => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "vibe-home-"));
+  const original = [
+    'active_model = "custom-model"',
+    'models = [{ name = "custom-model", provider = "mistral", alias = "custom-model" }]',
+    "",
+  ].join("\n");
+  await fs.writeFile(path.join(home, "config.toml"), original);
+  await config.ensureVibeConfigModel(home, "mistral-medium-latest");
+  const raw = await fs.readFile(path.join(home, "config.toml"), "utf8");
+  assert.ok(raw.includes("custom-model"), "user models must be preserved");
+  assert.ok(!/^\[\[models\]\]$/m.test(raw), "must not append AoT after an inline models array");
+  assert.match(raw, /^active_model = "mistral-medium-latest"$/m);
 });
 
 test("ensureVibeTrustedFolder seeds cwd once and clears untrusted entry", async () => {

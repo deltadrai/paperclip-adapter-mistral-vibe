@@ -17,7 +17,7 @@ export const models = [
 
 export const agentConfigurationDoc = `# mistral_vibe agent configuration
 
-Adapter: mistral_vibe (Mistral Vibe via the vibe-acp ACP server)
+Adapter: mistral_vibe (Mistral Vibe via vibe-acp ACP or the vibe CLI)
 
 Use when:
 - You want Paperclip to run agents on Mistral Vibe (Code › Vibe CLI plan keys)
@@ -25,9 +25,21 @@ Use when:
 - Multiple Vibe agents should run concurrently without sharing ~/.vibe
 
 Don't use when:
-- You want Vibe's terminal UI or the headless \`vibe -p\` path (only the ACP path is supported)
 - You want a plain Mistral API adapter (non-Vibe)
 - You run agents on a remote sandbox or another host
+
+Execution engines (engine):
+- acp (default): runs the standalone vibe-acp binary through Paperclip's shared
+  ACP engine. Supports interactive permission prompting surfaced in the
+  Paperclip UI. Requires Node >= 24.11 on the Paperclip server.
+- cli: runs the vibe CLI headless (vibe -p) — one process per run. Sessions
+  resume across runs via --resume (the id is stored in the agent's VIBE_HOME
+  and survives server restarts; a failed resume falls back to a fresh session).
+  Per-run usage and cost come from vibe's export.json. The CLI lane cannot ask
+  for approval mid-run: unanswered approval callbacks are auto-denied and
+  surfaced in the transcript, so pick the cliAgent profile up front. Install
+  via "uv tool install mistral-vibe" (installs vibe and vibe-acp side by
+  side) or download from https://github.com/mistralai/mistral-vibe/releases.
 
 Isolation model (important):
 - Every agent runs with its own VIBE_HOME (default: a stable per-agent directory
@@ -40,6 +52,18 @@ Isolation model (important):
   trusted_folders.toml, because ACP clients cannot answer Vibe's interactive
   workspace-trust prompt.
 
+Skills (both engines):
+- Skills assigned to this agent in the Paperclip UI sync into the agent's own
+  $VIBE_HOME/skills/ directory (symlinks to the materialized skill files).
+  Mistral Vibe discovers skills from there, and both engines share the same
+  per-agent VIBE_HOME, so the acp and cli lanes see the same skills.
+- The operational paperclip skill is mounted automatically so the agent can
+  report progress through the Paperclip API.
+- Each run re-asserts the desired links (repairs deleted or dangling links,
+  picks up version updates); sync problems are logged and never block a run.
+- User-installed skills in $VIBE_HOME/skills/ are left untouched and show up
+  as external entries in the UI.
+
 Prerequisites:
 - The standalone vibe-acp binary (self-contained; ships its own Python).
   Download vibe-acp-<platform>-<version>.tar.gz from
@@ -51,8 +75,15 @@ Prerequisites:
 
 Core fields:
 - model (string, optional): Mistral API model id. Defaults to mistral-medium-latest.
-  The adapter writes it into the agent's VIBE_HOME/config.toml so vibe-acp accepts
-  the model the ACP engine selects.
+  The model picker merges live discovery (GET /v1/models via the server-side
+  MISTRAL_API_KEY or MISTRAL_ADMIN_API_KEY) with the adapter's static list;
+  without a server-side key the static list is served. refreshModels bypasses
+  the discovery cache; detectModel reads active_model from the host default
+  $VIBE_HOME/config.toml.
+- The selected model is written into the agent's VIBE_HOME/config.toml
+  (active_model + [[models]] alias) so both engines run on it: vibe-acp
+  accepts the model the ACP engine selects via session/set_config_option,
+  and the CLI lane runs on the config.toml active model.
 - env (object, optional): KEY=VALUE environment variables for the agent process.
   Set MISTRAL_API_KEY here (a Paperclip secret reference is supported).
   VIBE_HOME is always set per agent by the adapter and overrides any value here.
@@ -62,7 +93,15 @@ Core fields:
 - promptTemplate (string, optional): run prompt template.
 
 Runtime fields:
-- vibeAcpPath (string, optional): absolute path to the vibe-acp binary.
+- engine (string, optional): acp (default) | cli. Selects the execution engine;
+  the config form shows only the fields for the selected engine.
+- vibeAcpPath (string, optional, acp): absolute path to the vibe-acp binary.
+- vibeCliPath (string, optional, cli): absolute path to the vibe binary.
+  Resolution: vibeCliPath → PAPERCLIP_VIBE_CLI_PATH → vibe on PATH.
+- cliAgent (string, optional, cli, default auto-approve): tool-approval profile
+  for vibe -p — auto-approve | smart-approve | accept-edits | default.
+- cliFreshSession (boolean, optional, cli, default false): skip the stored
+  resume id and start a new vibe session.
 - vibeHome (string, optional): absolute VIBE_HOME override for this agent.
 - vibeAuthProbe (boolean, optional, default true): when true, the environment test
   performs a live GET https://api.mistral.ai/v1/models with the agent's key.
