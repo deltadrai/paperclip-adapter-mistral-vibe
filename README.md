@@ -104,7 +104,7 @@ Resolution order per engine:
 | Field | Value |
 |---|---|
 | Execution engine | `acp` (default) or `cli` — the form swaps its lane-specific fields |
-| Model | e.g. `mistral-medium-latest` (default), `mistral-large-latest`, `mistral-small-latest`, `codestral-latest`, `zai-glm-5-3`, … |
+| Model | e.g. `mistral-medium-latest` (default), `mistral-large-4`, `mistral-large-latest`, `mistral-small-latest`, `codestral-latest`, `zai-glm-5-3`, `zai-glm-5-3-flash`, … |
 | env | `MISTRAL_API_KEY=<your key>` — a Paperclip **secret reference** is supported and recommended |
 | vibeAcpPath | `/opt/vibe-acp/vibe-acp` (acp lane; optional if the binary is on `PATH` or `PAPERCLIP_VIBE_ACP_PATH` is set) |
 | vibeCliPath | e.g. `/home/vibe/.local/bin/vibe` (cli lane; optional if `vibe` is on `PATH` or `PAPERCLIP_VIBE_CLI_PATH` is set) |
