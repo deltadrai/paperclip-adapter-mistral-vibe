@@ -5,11 +5,12 @@ export const DEFAULT_MISTRAL_VIBE_MODEL = "mistral-medium-latest";
 
 export const models = [
   { id: DEFAULT_MISTRAL_VIBE_MODEL, label: "Mistral Medium 3.5 (mistral-medium-latest)" },
+  { id: "mistral-large-4", label: "Mistral Large 4 (mistral-large-4)" },
   { id: "mistral-large-latest", label: "Mistral Large 3 (mistral-large-latest)" },
   { id: "mistral-small-latest", label: "Mistral Small 4 (mistral-small-latest)" },
   { id: "codestral-latest", label: "Codestral (codestral-latest)" },
   { id: "zai-glm-5-3", label: "Z.ai GLM 5.3 (zai-glm-5-3)" },
-  { id: "zai-glm-5-2", label: "Z.ai GLM 5.2 (zai-glm-5-2)" },
+  { id: "zai-glm-5-3-flash", label: "Z.ai GLM 5.3 Flash (zai-glm-5-3-flash)" },
   { id: "ministral-14b-latest", label: "Ministral 3 14B (ministral-14b-latest)" },
   { id: "ministral-8b-latest", label: "Ministral 3 8B (ministral-8b-latest)" },
   { id: "ministral-3b-latest", label: "Ministral 3 3B (ministral-3b-latest)" },
